@@ -352,9 +352,9 @@ public final class ErrorMessages {
     errorMessages.put(ERROR_NO_SCANNER_FOUND,
         "Your device does not have a scanning application installed.");
     errorMessages.put(ERROR_CANNOT_SAVE_IMAGE,
-        "Unable to save image: %s");
+        "Unable to save image, using original: %s");
     errorMessages.put(ERROR_CANNOT_COPY_MEDIA,
-        "Unable to copy selected media: %s");
+        "Unable to copy selected media, using original: %s");
     // Texting errors
     errorMessages.put(ERROR_BAD_VALUE_FOR_TEXT_RECEIVING,
       "Text Receiving should be either 1, 2 or 3.");

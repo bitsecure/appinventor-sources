@@ -69,6 +69,9 @@ public class ImagePicker extends Picker implements ActivityResultListener {
   // The path to the saved image
   private String selectionSavedImage = "";
 
+  // Tried EXTERNAL_CONTENT_URI
+  private static int triedExternal = 0;
+
   /**
    * Create a new ImagePicker component.
    *
@@ -89,7 +92,12 @@ public class ImagePicker extends Picker implements ActivityResultListener {
   
   @Override
   protected Intent getIntent() {
-    return new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.INTERNAL_CONTENT_URI);
+    if (triedExternal == 0) {
+      return new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+    }
+    else {
+      return new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.INTERNAL_CONTENT_URI);
+    }
   }
 
   /**
@@ -104,6 +112,7 @@ public class ImagePicker extends Picker implements ActivityResultListener {
     if (requestCode == this.requestCode && resultCode == Activity.RESULT_OK) {
       Uri selectedImage = data.getData();
       selectionURI = selectedImage.toString();
+      selectionSavedImage = selectionURI;
       Log.i(LOG_TAG, "selectionURI = " + selectionURI);
       
       // get the file type extension from the intent data Uri
@@ -117,12 +126,15 @@ public class ImagePicker extends Picker implements ActivityResultListener {
       saveSelectedImageToExternalStorage(extension);
       AfterPicking();
     }
+    else if (requestCode == this.requestCode && resultCode == Activity.RESULT_CANCELED) {
+      if ((data == null || data.getData() == null) && triedExternal == 0) {
+        triedExternal = 1;
+        ((Activity) container.$context()).startActivityForResult(getIntent(), this.requestCode);
+      }
+    }
   }
   
   private void saveSelectedImageToExternalStorage(String extension) {
-    // clear imageFile for new save attempt
-    // This will be the stored picture
-    selectionSavedImage = "";
     // create a temp file for holding the image that was picked
     // This is not the external stored file: This is in the internal directory used by MediaUtil
     File tempFile = null;
@@ -156,10 +168,9 @@ public class ImagePicker extends Picker implements ActivityResultListener {
       destDirectory.mkdirs();
       dest = File.createTempFile (FILE_PREFIX, extension,  destDirectory);
 
-      selectionSavedImage = dest.getPath();
       // Uncomment this to delete imageFile when the application stops
       // dest.deleteOnExit();
-      Log.i(LOG_TAG, "saved file path is: " + selectionSavedImage);
+      Log.i(LOG_TAG, "saved file path is: " + dest.getPath());
       
       inStream = new FileInputStream(source);
       outStream = new FileOutputStream(dest);
@@ -174,17 +185,18 @@ public class ImagePicker extends Picker implements ActivityResultListener {
 
       inStream.close();
       outStream.close();
+      selectionSavedImage = dest.getPath();
+    	 
       Log.i(LOG_TAG, "Image was copied to " + selectionSavedImage);
       // this can be uncommented to show the alert, but tha alert
       // is pretty annoying
       // new (container.$form()).ShowAlert("Image was copied to " + selectedImage);
 
     } catch(IOException e) {
-      String err =  "destination is " + selectionSavedImage + ": " + "error is "  + e.getMessage();
+      String err =  "destination is " + dest.getPath() + ": " + "error is "  + e.getMessage();
       Log.i(LOG_TAG, "copyFile failed. " + err);
       container.$form().dispatchErrorOccurredEvent(this, "SaveImage",
           ErrorMessages.ERROR_CANNOT_SAVE_IMAGE, err);
-      selectionSavedImage = "";
       dest.delete();
     }
     
@@ -208,6 +220,7 @@ public class ImagePicker extends Picker implements ActivityResultListener {
     int excess = files.length - maxSavedFiles;
     for (int i = 0; i < excess; i++) {
       files[i].delete();
+      // TODO Need to launch media scanner or add a .nomedia file to this dir
     }
 
   }
