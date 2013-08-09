@@ -1268,18 +1268,18 @@ public class Form extends Activity
   public boolean onCreateOptionsMenu(Menu menu) {
     // This procedure is called only once.  To change the items dynamically
     // we would use onPrepareOptionsMenu.
-	super.onCreateOptionsMenu(menu);
-	return true;
+    super.onCreateOptionsMenu(menu);
+    return true;
   }
   
   @Override
   public boolean onPrepareOptionsMenu(Menu menu) {
-	// This procedure is called every time the menu is displayed.
+    // This procedure is called every time the menu is displayed.
     // add the menu items
-	if (showExitMenu) {
-	  addExitButtonToMenu(menu);
-	}
-	return true;
+    if (showExitMenu) {
+      addExitButtonToMenu(menu);
+    }
+    return true;
   }
 
   public void addExitButtonToMenu(Menu menu) {
