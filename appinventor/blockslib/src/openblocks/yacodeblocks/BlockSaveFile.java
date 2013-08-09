@@ -16,6 +16,9 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.io.StringReader;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -56,8 +59,12 @@ public class BlockSaveFile {
       // it.  If we correctly provided upgrade strategies and the user did not hack the source file,
       // this should not happen.
       e.printStackTrace();
+      final Writer writer = new StringWriter();
+      PrintWriter printWriter = new PrintWriter(writer);
+      e.printStackTrace(printWriter);
+      String s = writer.toString();
       FeedbackReporter.showWarningMessage(
-          "This project was saved in an older format, and cannot be upgraded at this time.");
+          "This project was saved in an older format, and cannot be upgraded at this time." + s);
     } catch (LoadException e) {
       // The blocks file is a newer version than the system.
       e.printStackTrace();
@@ -816,6 +823,10 @@ public class BlockSaveFile {
       // The BackPressed event was added. No blocks need to be modified to upgrade to version 10.
       blkCompVersion = 10;
     }
+    if (blkCompVersion < 11) {
+      // The RequestWakeLock and ShowExitMenu properties were added. No blocks need to be modified to upgrade to version 11.
+      blkCompVersion = 11;
+    }
     return blkCompVersion;
   }
 
@@ -1258,10 +1269,12 @@ public class BlockSaveFile {
   }
 
   private int upgradeWebViewerBlocks(int blkCompVersion, String componentName) {
-    if (blkCompVersion < 2) {
+    if (blkCompVersion < 3) {
       // The CanGoForward and CanGoBack methods were added
       // nothing needs to be changed to upgrade to version 2
-      blkCompVersion = 2;
+      // UsesLocation property added.
+      // No properties need to be modified to upgrade to version 3.
+      blkCompVersion = 3;
     }
     return blkCompVersion;
   }

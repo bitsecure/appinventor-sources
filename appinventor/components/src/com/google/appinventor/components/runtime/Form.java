@@ -19,6 +19,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.ActivityNotFoundException;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
@@ -26,6 +27,7 @@ import android.content.res.Configuration;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.PowerManager;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -74,7 +76,7 @@ import com.google.appinventor.components.runtime.util.ViewUtil;
     description = "Top-level component containing all other components in the program",
     showOnPalette = false)
 @SimpleObject
-@UsesPermissions(permissionNames = "android.permission.INTERNET,android.permission.ACCESS_WIFI_STATE,android.permission.ACCESS_NETWORK_STATE")
+@UsesPermissions(permissionNames = "android.permission.INTERNET,android.permission.ACCESS_WIFI_STATE,android.permission.ACCESS_NETWORK_STATE,android.permission.WAKE_LOCK")
 public class Form extends Activity
     implements Component, ComponentContainer, HandlesEventDispatching {
   private static final String LOG_TAG = "Form";
@@ -105,6 +107,10 @@ public class Form extends Activity
   private String formName;
 
   private boolean screenInitialized;
+  
+  private boolean requestWakeLock = false;
+  private boolean showExitMenu = true;
+  private static PowerManager.WakeLock wl;
 
   private static final int SWITCH_FORM_REQUEST_CODE = 1;
   private static int nextRequestCode = SWITCH_FORM_REQUEST_CODE + 1;
@@ -160,6 +166,10 @@ public class Form extends Activity
   public void onCreate(Bundle icicle) {
     // Called when the activity is first created
     super.onCreate(icicle);
+    
+    PowerManager pm = (PowerManager) $context().getSystemService(Context.POWER_SERVICE);
+    wl = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK | PowerManager.ON_AFTER_RELEASE, Title());
+    wl.setReferenceCounted(false);
 
     // Figure out the name of this form.
     String className = getClass().getName();
@@ -185,13 +195,14 @@ public class Form extends Activity
 
     // Add application components to the form
     $define();
-
+    
     // Special case for Event.Initialize(): all other initialize events are triggered after
     // completing the constructor. This doesn't work for Android apps though because this method
     // is called after the constructor completes and therefore the Initialize event would run
     // before initialization finishes. Instead the compiler suppresses the invocation of the
     // event and leaves it up to the library implementation.
     Initialize();
+    
   }
 
   private void defaultPropertyValues() {
@@ -406,6 +417,9 @@ public class Form extends Activity
 
     for (OnDestroyListener onDestroyListener : onDestroyListeners) {
       onDestroyListener.onDestroy();
+    }
+    if (requestWakeLock && wl.isHeld()) {
+      wl.release();
     }
   }
 
@@ -682,6 +696,58 @@ public class Form extends Activity
     setTitle(title);
   }
 
+  /**
+   * RequestWakeLock property getter method.
+   *
+   *  return {@code true} if the timer, when enabled, should request a WakeLock
+   */
+  @SimpleProperty(
+      category = PropertyCategory.BEHAVIOR)
+  public boolean RequestWakeLock() {
+    return requestWakeLock;
+  }
+
+  /**
+   * RequestWakeLock property setter method: instructs when to disable
+   *
+   *  @param always {@code true} if the timer, when enabled, should request a WakeLock
+   */
+  @DesignerProperty(editorType = PropertyTypeConstants.PROPERTY_TYPE_BOOLEAN, defaultValue = "False")
+  @SimpleProperty
+  public void RequestWakeLock(boolean enabled) {
+    requestWakeLock = enabled;
+    if (requestWakeLock && !wl.isHeld()) {
+      wl.acquire();
+    }
+    else if (!requestWakeLock) {
+      if (wl.isHeld()) {
+        wl.release();
+      }
+    }
+  }
+  
+  /**
+   * ShowExitMenu property getter method.
+   *
+   *  return {@code true} if we should show an exit menu item
+   */
+  @SimpleProperty(
+      category = PropertyCategory.BEHAVIOR)
+  public boolean ShowExitMenu() {
+    return showExitMenu;
+  }
+
+  /**
+   * ShowExitMenu property setter method: instructs when to disable
+   *
+   *  @param always {@code true} if we should show an exit menu item
+   */
+  @DesignerProperty(editorType = PropertyTypeConstants.PROPERTY_TYPE_BOOLEAN, defaultValue = "True")
+  @SimpleProperty
+  public void ShowExitMenu(boolean enabled) {
+    showExitMenu = enabled;
+  }  
+  
   /**
    * The requested screen orientation. Commonly used values are
       unspecified (-1), landscape (0), portrait (1), sensor (4), and user (2).  " +
@@ -1202,11 +1268,18 @@ public class Form extends Activity
   public boolean onCreateOptionsMenu(Menu menu) {
     // This procedure is called only once.  To change the items dynamically
     // we would use onPrepareOptionsMenu.
-    super.onCreateOptionsMenu(menu);
+	super.onCreateOptionsMenu(menu);
+	return true;
+  }
+  
+  @Override
+  public boolean onPrepareOptionsMenu(Menu menu) {
+	// This procedure is called every time the menu is displayed.
     // add the menu items
-    // Comment out the next line if we don't want the exit button
-    addExitButtonToMenu(menu);
-    return true;
+	if (showExitMenu) {
+	  addExitButtonToMenu(menu);
+	}
+	return true;
   }
 
   public void addExitButtonToMenu(Menu menu) {
@@ -1218,6 +1291,7 @@ public class Form extends Activity
         return true;
       }
     });
+    stopApplicationItem.setTitleCondensed("Exit App");
     stopApplicationItem.setIcon(android.R.drawable.ic_menu_close_clear_cancel);
   }
 
