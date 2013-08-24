@@ -24,7 +24,7 @@ import com.google.appinventor.components.common.YaVersion;
 /**
  * Use AlarmManager to wake up the app after a specified interval.
  *
- * @author appliedautism@google.com (Mark D. Adams)
+ * @author appliedautism@gmail.com (Mark D. Adams)
  */
 @DesignerComponent(version = YaVersion.ALARM_COMPONENT_VERSION,
     category = ComponentCategory.BASIC,
