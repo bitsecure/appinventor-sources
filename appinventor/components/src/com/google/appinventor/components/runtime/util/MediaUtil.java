@@ -6,6 +6,7 @@
 package com.google.appinventor.components.runtime.util;
 
 import com.google.appinventor.components.runtime.Form;
+import com.google.appinventor.components.runtime.Notifier;
 import com.google.appinventor.components.runtime.ReplForm;
 
 import android.content.Context;
@@ -291,7 +292,11 @@ public class MediaUtil {
     InputStream is2 = openMedia(form, mediaPath, mediaSource);
     try {
       return new BitmapDrawable(decodeStream(is2, null, options));
-    } finally {
+    } catch (OutOfMemoryError e) {
+      new Notifier(form).ShowAlert("Your image caused an out of memory problem. Please scale it down or crop it.");
+      return null;
+    }
+    finally {
       is2.close();
     }
   }
