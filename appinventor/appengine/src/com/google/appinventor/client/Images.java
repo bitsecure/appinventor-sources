@@ -192,6 +192,12 @@ public interface Images extends Resources {
    */
   @Source("com/google/appinventor/images/clock.png")
   ImageResource clock();
+  
+  /**
+   * Designer palette item: Alarm component
+   */
+  @Source("com/google/appinventor/images/alarm.png")
+  ImageResource alarm();
 
   /**
    * Designer palette item: SoundEffect component

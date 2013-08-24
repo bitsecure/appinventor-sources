@@ -223,8 +223,12 @@ public class YaVersion {
   // - WEBVIEWER_COMPONENT_VERSION was incremented to 3
   // For YOUNG_ANDROID_VERSION 76:
   // - FORM_COMPONENT_VERSION was incremented to 11
-  public static final int YOUNG_ANDROID_VERSION = 76;
+  // For YOUNG_ANDROID_VERSION 77:
+  // - The Alarm component was added.
+  public static final int YOUNG_ANDROID_VERSION = 77;
 
+  public static final int ALARM_COMPONENT_VERSION = 1;
+  
   // ............................... Blocks Language Version Number ...............................
 
   // NOTE(lizlooney,user) - when the blocks language changes:
