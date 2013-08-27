@@ -38,6 +38,9 @@ public class Alarm extends AndroidNonvisibleComponent implements Component, Dele
   private static final long DEFAULT_DELAY = 300000;  // ms
   private long Delay;
   private static Activity activity;
+  private static Intent newIntent = null;
+  private static PendingIntent pendingintent;
+  private static AlarmManager newAlarm;
 
   /**
    * Creates a new Alarm component.
@@ -47,6 +50,20 @@ public class Alarm extends AndroidNonvisibleComponent implements Component, Dele
   public Alarm(ComponentContainer container) {
     super(container.$form());
     activity = container.$context();
+    final String classname = activity.getPackageName() + ".Screen1";
+    
+    try {
+      newIntent = new Intent(activity, Class.forName(classname));
+    } catch (ClassNotFoundException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+    
+    newIntent.setAction(Intent.ACTION_MAIN);
+    newIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+    pendingintent = PendingIntent.getActivity(activity, 0, newIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+    
+    newAlarm = (AlarmManager) activity.getSystemService(Context.ALARM_SERVICE);
   }
   
   /**
@@ -79,23 +96,6 @@ public class Alarm extends AndroidNonvisibleComponent implements Component, Dele
   @SimpleFunction (
       description = "Sets the alarm")
   public void SetAlarm() {
-    Intent newIntent = null;
-    String classname = activity.getPackageName() + ".Screen1";
-  
-    try {
-      newIntent = new Intent(activity, Class.forName(classname));
-    } catch (ClassNotFoundException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    }
-
-    newIntent.setAction(Intent.ACTION_MAIN);
-    newIntent.addCategory(Intent.CATEGORY_LAUNCHER);
-    newIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-    
-    PendingIntent pendingintent = PendingIntent.getActivity(activity, 0, newIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-    
-    AlarmManager newAlarm = (AlarmManager) activity.getSystemService(Context.ALARM_SERVICE);
     newAlarm.set(AlarmManager.ELAPSED_REALTIME_WAKEUP, SystemClock.elapsedRealtime() + Delay, pendingintent);
   }  
 
@@ -104,20 +104,7 @@ public class Alarm extends AndroidNonvisibleComponent implements Component, Dele
    */
   @SimpleFunction (
       description = "Cancels any alarms")
-  public void CancelAlarm() {
-    Intent newIntent = null;
-    String classname = activity.getPackageName() + ".Screen1";
-    
-    try {
-      newIntent = new Intent(activity, Class.forName(classname));
-    } catch (ClassNotFoundException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    }
-    newIntent.setAction(Intent.ACTION_MAIN);
-    newIntent.addCategory(Intent.CATEGORY_LAUNCHER);
-    PendingIntent pendingintent = PendingIntent.getActivity(activity, 0, newIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-    AlarmManager newAlarm = (AlarmManager) activity.getSystemService(Context.ALARM_SERVICE);
+  public void CancelAlarm() {   
     newAlarm.cancel(pendingintent);
   }
   
