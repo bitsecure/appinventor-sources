@@ -4,20 +4,20 @@
 // Released under the MIT License https://raw.github.com/mit-cml/app-inventor/master/mitlicense.txt
 package com.google.appinventor.components.runtime.util;
 
-import com.google.appinventor.components.runtime.WebViewer;
-
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.Context;
 import android.content.DialogInterface;
-
-import android.view.MotionEvent;
-import android.view.View;
+import android.net.Uri;
+import android.provider.ContactsContract;
 import android.webkit.GeolocationPermissions;
 import android.webkit.GeolocationPermissions.Callback;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
 import android.webkit.WebChromeClient;
+import android.webkit.WebView;
+import java.io.InputStream;
+import android.content.Context;
+
+import com.google.appinventor.components.runtime.Form;
+import com.google.appinventor.components.runtime.WebViewer;
 
 /**
  * Helper methods for calling methods added in Eclair (2.0, API level 5)
@@ -29,7 +29,7 @@ public class EclairUtil {
 
   private EclairUtil() {
   }
-
+  
   /**
    * Calls {@link Activity#overridePendingTransition(int, int)}. This is used
    * to set a different animation type for screen transition animations.
@@ -98,5 +98,29 @@ public class EclairUtil {
     GeolocationPermissions permissions = GeolocationPermissions.getInstance();
     permissions.clearAll();
   }
-
+  
+  public static Uri ContactsUri() {
+    return ContactsContract.Contacts.CONTENT_URI;
+  }
+  
+  public static String displayName() {
+    return ContactsContract.Contacts.DISPLAY_NAME;
+  }
+  
+  public static Uri emailUri() {
+    return ContactsContract.CommonDataKinds.Email.CONTENT_URI;
+  }
+  
+  public static String emailData() {
+    return ContactsContract.CommonDataKinds.Email.DATA;
+  }
+  
+  public static String emailContactID() {
+    return ContactsContract.CommonDataKinds.Email.CONTACT_ID;
+  }
+  
+  public static InputStream contactPhotoStream(Form form, Uri uri) {
+    return ContactsContract.Contacts.openContactPhotoInputStream(form.getContentResolver(), uri);
+  }
+  
 }

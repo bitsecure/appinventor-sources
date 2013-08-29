@@ -8,6 +8,7 @@ package com.google.appinventor.components.runtime.util;
 import com.google.appinventor.components.runtime.Form;
 import com.google.appinventor.components.runtime.Notifier;
 import com.google.appinventor.components.runtime.ReplForm;
+import com.google.appinventor.components.runtime.util.EclairUtil;
 
 import android.content.Context;
 import android.content.res.AssetFileDescriptor;
@@ -44,7 +45,7 @@ import java.util.Map;
  */
 public class MediaUtil {
 
-  private enum MediaSource { ASSET, REPL_ASSET, SDCARD, FILE_URL, URL, CONTENT_URI, CONTACT_URI }
+  private enum MediaSource { ASSET, REPL_ASSET, SDCARD, FILE_URL, URL, CONTENT_URI, CONTACT_URI, CONTACT_URI2 }
 
   private static final String LOG_TAG = "MediaUtil";
   private static final String REPL_ASSET_DIR = "/sdcard/AppInventor/assets/";
@@ -96,6 +97,9 @@ public class MediaUtil {
 
     } else if (mediaPath.startsWith("content://contacts/")) {
       return MediaSource.CONTACT_URI;
+      
+    } else if (mediaPath.startsWith("content://com.android.contacts/")) {
+      return MediaSource.CONTACT_URI2;
 
     } else if (mediaPath.startsWith("content://")) {
       return MediaSource.CONTENT_URI;
@@ -184,6 +188,14 @@ public class MediaUtil {
         }
         // There's no photo for the contact.
         throw new IOException("Unable to open contact photo " + mediaPath + ".");
+        
+      case CONTACT_URI2:
+        if (SdkLevel.getLevel() >= SdkLevel.LEVEL_ECLAIR) {
+          InputStream is2 = EclairUtil.contactPhotoStream(form, Uri.parse(mediaPath));
+          if (is2 != null) {
+            return is2;
+          }
+        }
     }
     throw new IOException("Unable to open media " + mediaPath + ".");
   }
@@ -419,6 +431,7 @@ public class MediaUtil {
         return soundPool.load(tempFile.getAbsolutePath(), 1);
 
       case CONTACT_URI:
+      case CONTACT_URI2:
         throw new IOException("Unable to load audio for contact " + mediaPath + ".");
     }
 
@@ -476,6 +489,7 @@ public class MediaUtil {
         return;
 
       case CONTACT_URI:
+      case CONTACT_URI2:
         throw new IOException("Unable to load audio or video for contact " + mediaPath + ".");
     }
     throw new IOException("Unable to load audio or video " + mediaPath + ".");
@@ -521,6 +535,7 @@ public class MediaUtil {
         return;
 
       case CONTACT_URI:
+      case CONTACT_URI2:
         throw new IOException("Unable to load video for contact " + mediaPath + ".");
     }
     throw new IOException("Unable to load video " + mediaPath + ".");

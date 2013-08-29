@@ -5,6 +5,13 @@
 
 package com.google.appinventor.components.runtime;
 
+import android.app.Activity;
+import android.content.Intent;
+import android.database.Cursor;
+import android.net.Uri;
+import android.provider.Contacts;
+import android.util.Log;
+
 import com.google.appinventor.components.annotations.DesignerComponent;
 import com.google.appinventor.components.annotations.PropertyCategory;
 import com.google.appinventor.components.annotations.SimpleObject;
@@ -12,14 +19,9 @@ import com.google.appinventor.components.annotations.SimpleProperty;
 import com.google.appinventor.components.annotations.UsesPermissions;
 import com.google.appinventor.components.common.ComponentCategory;
 import com.google.appinventor.components.common.YaVersion;
+import com.google.appinventor.components.runtime.util.EclairUtil;
 import com.google.appinventor.components.runtime.util.ErrorMessages;
-
-import android.app.Activity;
-import android.content.Intent;
-import android.database.Cursor;
-import android.net.Uri;
-import android.provider.Contacts;
-import android.util.Log;
+import com.google.appinventor.components.runtime.util.SdkLevel;
 
 /**
  * Component enabling a user to select a contact.
@@ -61,14 +63,21 @@ public class ContactPicker extends Picker implements ActivityResultListener {
   protected String contactName;
   protected String emailAddress;
   protected String contactPictureUri;
-
+  
   /**
    * Create a new ContactPicker component.
    *
    * @param container the parent container.
    */
   public ContactPicker(ComponentContainer container) {
-    this(container, Contacts.People.CONTENT_URI);
+    this(container, getUri());
+  }
+  
+  private static Uri getUri() {
+    Uri contactUri = (SdkLevel.getLevel() >= SdkLevel.LEVEL_ECLAIR)
+        ? EclairUtil.ContactsUri()
+        : Contacts.People.CONTENT_URI;
+    return contactUri;
   }
 
   protected ContactPicker(ComponentContainer container, Uri intentUri) {
@@ -131,8 +140,31 @@ public class ContactPicker extends Picker implements ActivityResultListener {
     if (requestCode == this.requestCode && resultCode == Activity.RESULT_OK) {
       Log.i("ContactPicker", "received intent is " + data);
       Uri contactUri = data.getData();
-      if (checkContactUri(contactUri, "//contacts/people")) {
-        Cursor cursor = null;
+
+      Cursor cursor = null;
+      if (SdkLevel.getLevel() >= SdkLevel.LEVEL_ECLAIR) {
+        // Get name string
+        cursor = activityContext.getContentResolver().query(contactUri, new String [] {EclairUtil.displayName()}, null, null, null);
+        if (cursor.moveToFirst()) {
+          contactName = cursor.getString(cursor.getColumnIndex(EclairUtil.displayName()));
+          Log.i("ContactPicker", "contact is " + contactName);
+        }
+        cursor.close();
+        
+        // Get e-mail string
+        String id = contactUri.getLastPathSegment();
+        cursor = activityContext.getContentResolver().query(EclairUtil.emailUri(), new String [] {EclairUtil.emailData()}, EclairUtil.emailContactID() + "=?", new String[] { id }, null);  
+        if (cursor.moveToFirst()) {
+          emailAddress = cursor.getString(cursor.getColumnIndex(EclairUtil.emailData()));
+          Log.i("ContactPicker", "email is " + emailAddress);
+        }
+        cursor.close();
+        
+        // Get photo string
+        contactPictureUri = contactUri.toString();
+        Log.i("ContactPicker", "picture is " + contactPictureUri);
+        
+      } else if (checkContactUri(contactUri, "//contacts/people")) {
         try {
           cursor = activityContext.getContentResolver().query(contactUri,
               PROJECTION, null, null, null);
@@ -154,7 +186,8 @@ public class ContactPicker extends Picker implements ActivityResultListener {
         } finally {
           cursor.close();
         }
-      } // ends if (checkContactUri ...
+
+      } // ends if (SdkLevel ...
       AfterPicking();
     }  //ends if (requestCode ....
   }
@@ -182,6 +215,7 @@ public class ContactPicker extends Picker implements ActivityResultListener {
       return false;
     }
     String UriSpecific = suspectUri.getSchemeSpecificPart();
+    
     if (UriSpecific.startsWith("//com.android.contacts/contact")) {
       Log.i("ContactPicker", "checkContactUri failed: B");
       // We trap this specific pattern in order be able to show the
@@ -189,6 +223,7 @@ public class ContactPicker extends Picker implements ActivityResultListener {
       // PhoneNumberPicker
       puntContactSelection(ErrorMessages.ERROR_PHONE_UNSUPPORTED_SEARCH_IN_CONTACT_PICKING);
       return false;
+      
     } else if (!(UriSpecific.startsWith(requiredPattern))) {
       Log.i("ContactPicker", "checkContactUri failed: C");
       Log.i("Contact Picker", suspectUri.getPath());
